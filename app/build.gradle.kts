@@ -53,23 +53,29 @@ android {
 }
 
 dependencies {
-
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation("ch.acra:acra-http:5.11.0")
+    implementation("ch.acra:acra-dialog:5.11.0")
     implementation(platform(libs.androidx.compose.bom))
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.compose.material:material-icons-core:1.6.8")
+    implementation("androidx.compose.material:material-icons-extended-android:1.6.8")
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.material)
-    implementation(libs.androidx.datastore.core)
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation(libs.androidx.datastore.core.v111)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.datastore.preferences.core)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -78,12 +84,24 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation("com.github.UstadMobile.Meshrabiya:lib-meshrabiya:0.1d10-snapshot")
+    implementation("com.github.seancfoley:ipaddress:5.3.3")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("org.nanohttpd:nanohttpd:2.3.1")
     implementation (libs.material)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("com.github.yveskalume:compose-qrpainter:0.0.1")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-    implementation("androidx.appcompat:appcompat:1.3.1")
+    implementation(libs.androidx.appcompat)
     implementation ("io.coil-kt:coil-compose:1.4.0")
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+    // Core Kodein DI dependency
+
+    // For Android-specific features
+    implementation ("org.kodein.di:kodein-di-framework-android-x:7.20.2")
+
+    // For Jetpack Compose support
+    implementation ("org.kodein.di:kodein-di-framework-compose:7.20.2")
 
     val room_version = "2.6.1"
 
@@ -91,7 +109,7 @@ dependencies {
     annotationProcessor("androidx.room:room-compiler:$room_version")
 
     // To use Kotlin annotation processing tool (kapt)
-    //kapt("androidx.room:room-compiler:$room_version")
+    // kapt("androidx.room:room-compiler:$room_version")
     // To use Kotlin Symbol Processing (KSP)
     ksp("androidx.room:room-compiler:$room_version")
 
@@ -114,7 +132,7 @@ dependencies {
     implementation("androidx.room:room-paging:$room_version")
 
     // for crash scren
-    implementation("com.google.code.gson:gson:2.9.1")
+    implementation("com.google.code.gson:gson:2.10.1")
 
     // For JSON serialisation
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
