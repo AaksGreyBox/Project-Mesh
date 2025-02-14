@@ -1,12 +1,15 @@
 package com.greybox.projectmesh.views
 
-import android.app.Activity
+import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -38,7 +41,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +61,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.zxing.BarcodeFormat
 import com.greybox.projectmesh.NEARBY_WIFI_PERMISSION_NAME
 import com.greybox.projectmesh.R
@@ -76,21 +79,21 @@ import com.ustadmobile.meshrabiya.vnet.AndroidVirtualNode
 import com.ustadmobile.meshrabiya.vnet.MeshrabiyaConnectLink
 import com.ustadmobile.meshrabiya.vnet.VirtualNode
 import com.ustadmobile.meshrabiya.vnet.wifi.state.WifiStationState
-import com.yveskalume.compose.qrpainter.rememberQrBitmapPainter
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
 import org.kodein.di.compose.localDI
 import org.kodein.di.direct
 import org.kodein.di.instance
 
 @Composable
 // We customize the viewModel since we need to inject dependencies
-fun HomeScreen(viewModel: HomeScreenViewModel = viewModel(
+fun HomeScreen(viewModel: HomeScreenViewModel = viewModel
+    (
     factory = ViewModelFactory(
         di = localDI(),
         owner = LocalSavedStateRegistryOwner.current,
         vmFactory = { HomeScreenViewModel(it) },
-        defaultArgs = null)))
+        defaultArgs = null)),
+    deviceName: String?
+)
 {
     val di = localDI()
     val uiState: HomeScreenModel by viewModel.uiState.collectAsState(initial = HomeScreenModel())
@@ -104,7 +107,6 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel(
             viewModel.onSetIncomingConnectionsEnabled(true)
         }
     } }
-
     // Launch the home screen
     StartHomeScreen(
         uiState = uiState,
@@ -118,6 +120,7 @@ fun HomeScreen(viewModel: HomeScreenViewModel = viewModel(
             }
         },
         onClickDisconnectWifiStation = viewModel::onClickDisconnectStation,
+        deviceName = deviceName
     )
 }
 
@@ -129,6 +132,7 @@ fun StartHomeScreen(
     onSetIncomingConnectionsEnabled: (Boolean) -> Unit = { },
     onClickDisconnectWifiStation: () -> Unit = { },
     viewModel: HomeScreenViewModel = viewModel(),
+    deviceName: String?
 ){
     val di = localDI()
     val barcodeEncoder = remember { BarcodeEncoder() }
@@ -174,21 +178,22 @@ fun StartHomeScreen(
     }
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
         Column {
-            Spacer(modifier = Modifier.height(4.dp))
-            // Display the device IP
+            Spacer(modifier = Modifier.height(6.dp))
+            // Display the device name and IP
             LongPressCopyableText(
                 context = context,
                 text = "",
-                textCopyable = Build.BRAND.substring(0, 1).uppercase() +
-                        Build.BRAND.substring(1).lowercase() + " " + Build.MODEL,
-                textSize = 15
+                textCopyable = deviceName.toString(),
+                textSize = 15,
+                padding = 6
             )
             Spacer(modifier = Modifier.height(6.dp))
             LongPressCopyableText(
                 context = context,
                 text = stringResource(id = R.string.ip_address) + ": ",
                 textCopyable = uiState.localAddress.addressToDotNotation(),
-                textSize = 15
+                textSize = 15,
+                padding = 6
             )
             Spacer(modifier = Modifier.height(12.dp))
             // Display the "Start Hotspot" button
@@ -258,7 +263,7 @@ fun StartHomeScreen(
                 if (stationState.status == WifiStationState.Status.INACTIVE){
                     Column (modifier = Modifier.fillMaxWidth()){
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = stringResource(id = R.string.wifi_station_connection), style = TextStyle(fontSize = 16.sp))
+                        Text(modifier = Modifier.padding(6.dp), text = stringResource(id = R.string.wifi_station_connection), style = TextStyle(fontSize = 16.sp))
                         Spacer(modifier = Modifier.height(12.dp))
                         Row (modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center)
@@ -277,7 +282,7 @@ fun StartHomeScreen(
                             )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = stringResource(id = R.string.instruction))
+                        Text(modifier = Modifier.padding(6.dp), text = stringResource(id = R.string.instruction))
                         Spacer(modifier = Modifier.height(4.dp))
                         TextField(
                             value = userEnteredConnectUri,
@@ -343,7 +348,7 @@ fun StartHomeScreen(
             Spacer(modifier = Modifier.height(10.dp))
             // add a Hotspot status indicator
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = stringResource(id = R.string.hotspot_status) + ": " + 
+                Text(modifier = Modifier.padding(6.dp), text = stringResource(id = R.string.hotspot_status) + ": " +
                         if (uiState.hotspotStatus) stringResource(
                             id = R.string.hotspot_status_online
                         ) else stringResource(id = R.string.hotspot_status_offline))
@@ -363,7 +368,11 @@ fun StartHomeScreen(
 
 // Enable users to copy text by holding down the text for a long press
 @Composable
-fun LongPressCopyableText(context: Context, text: String, textCopyable: String, textSize: Int){
+fun LongPressCopyableText(context: Context,
+                          text: String,
+                          textCopyable: String,
+                          textSize: Int,
+                          padding: Int = 0){
     val clipboardManager = LocalClipboardManager.current
     BasicText(
         text = text + textCopyable,
@@ -376,7 +385,7 @@ fun LongPressCopyableText(context: Context, text: String, textCopyable: String, 
                     clipboardManager.setText(AnnotatedString(textCopyable))
                     Toast.makeText(context, "Text copied to clipboard!", Toast.LENGTH_SHORT).show()
                 })
-        }
+        }.padding(padding.dp)
     )
 }
 
